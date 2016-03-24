@@ -23,5 +23,10 @@ fn main() {
     println!("Connecting to {}...", name);
     let mut stream = TcpStream::connect(name).unwrap();
     let mut buffer : [u8; 10] = [0; 10];
+    let mut handshake = [
+        0,  // packet ID 0: handshake
+        47, // protocol version
+        // TODO: finish this
+        ];
     stream.read(&mut buffer).unwrap();
 }
