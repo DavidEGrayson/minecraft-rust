@@ -95,6 +95,7 @@ fn main() {
     let mut stream = TcpStream::connect(&*name).unwrap();
     println!("Connected.");
     let mut buffer : [u8; 10] = [0; 10];
+
     let handshake = Handshake {
         protocol_version: 107,  // current protocol version
         server_address: server_address.to_owned(),
@@ -108,7 +109,8 @@ fn main() {
     stream.write(&handshake.encode()).unwrap();
     print_bytes(&login_start.encode());
     stream.write(&login_start.encode()).unwrap();
+
+    std::thread::sleep(std::time::Duration::new(5, 0));
     let byte_count = stream.read(&mut buffer).unwrap();
     print_bytes(&buffer[0..byte_count]);
-    std::thread::sleep(std::time::Duration::new(5, 0));
 }
