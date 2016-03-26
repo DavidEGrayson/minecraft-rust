@@ -34,14 +34,22 @@ struct Handshake {
     next_state : u32,  // 1 for status, 2 for login
 }
 
+fn wrap_packet(x : Vec<u8>) -> Vec<u8>
+{
+    let mut r = encode_varint(x.len() as u32);
+    r.extend(x);
+    r
+}
+
 impl EncodablePacket for Handshake {
     fn encode(&self) -> Vec<u8> {
-        let mut x : Vec<u8> = Vec::new();
-        x.extend(&encode_varint(self.protocol_version));
-        x.extend(&encode_string(&self.server_address));
-        x.extend(&encode_varint(self.server_port as u32));
-        x.extend(&encode_varint(self.next_state as u32));
-        return x;
+        let mut r : Vec<u8> = Vec::new();
+        r.extend(&encode_varint(0x00));  // packet ID
+        r.extend(&encode_varint(self.protocol_version));
+        r.extend(&encode_string(&self.server_address));
+        r.extend(&encode_varint(self.server_port as u32));
+        r.extend(&encode_varint(self.next_state as u32));
+        wrap_packet(r)
     }
 }
 
