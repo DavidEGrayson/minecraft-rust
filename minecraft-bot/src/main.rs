@@ -4,6 +4,25 @@ use std::io::prelude::*;
 use std::fs::File;
 use yaml_rust::YamlLoader;
 
+fn encode_varint(n : u32) -> Vec<u8> {
+    if n > 127 {
+        let mut r : Vec<u8> = vec![(n as u8) | 0x80];
+        let rest : Vec<u8> = encode_varint(n >> 7);
+        r.extend(&rest);
+        r
+    }
+    else {
+        return vec![n as u8];
+    }
+}
+
+fn encode_string(s : &str) -> Vec<u8>
+{
+    let mut r : Vec<u8> = encode_varint(s.len() as u32); // TODO: don't use 'as' here
+    r.extend(s.to_owned().into_bytes());
+    r
+}
+
 trait EncodablePacket {
     fn encode(&self) -> Vec<u8>;
 }
@@ -17,7 +36,10 @@ struct Handshake {
 
 impl EncodablePacket for Handshake {
     fn encode(&self) -> Vec<u8> {
-        vec![1, 2, 3]  // TODO: something real here
+        let mut x : Vec<u8> = Vec::new();
+        x.extend(&encode_varint(self.protocol_version));
+        x.extend(&encode_string(&self.server_address));
+        return x;
     }
 }
 
@@ -36,8 +58,9 @@ fn read_settings() -> yaml_rust::Yaml {
 
 fn print_bytes(bytes : &[u8]) {
     for byte in bytes {
-        println!("byte = {}", byte);
+        print!("0x{:02x} ", byte);
     }
+    println!("");
 }
 
 fn main() {
@@ -55,6 +78,7 @@ fn main() {
         server_port: server_port,
         next_state: 2, // login
     };
+    print_bytes(&handshake.encode());
     stream.write(&handshake.encode()).unwrap();
     let byte_count = stream.read(&mut buffer).unwrap();
     print_bytes(&buffer[0..byte_count]);
