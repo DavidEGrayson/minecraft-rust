@@ -39,6 +39,8 @@ impl EncodablePacket for Handshake {
         let mut x : Vec<u8> = Vec::new();
         x.extend(&encode_varint(self.protocol_version));
         x.extend(&encode_string(&self.server_address));
+        x.extend(&encode_varint(self.server_port as u32));
+        x.extend(&encode_varint(self.next_state as u32));
         return x;
     }
 }
@@ -72,7 +74,7 @@ fn main() {
     let mut stream = TcpStream::connect(&*name).unwrap();
     println!("Connected.");
     let mut buffer : [u8; 10] = [0; 10];
-    let mut handshake = Handshake {
+    let handshake = Handshake {
         protocol_version: 47,  // current protocol version
         server_address: server_address.to_owned(),
         server_port: server_port,
