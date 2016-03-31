@@ -16,7 +16,7 @@ fn encode_varint(n : u32) -> Vec<u8> {
     }
 }
 
-fn encode_ushort(n : u16) -> Vec<u8> {
+fn encode_u16(n : u16) -> Vec<u8> {
   return vec![(n >> 8) as u8, n as u8];
 }
 
@@ -51,7 +51,7 @@ impl EncodablePacket for Handshake {
         r.extend(&encode_varint(0x00));  // packet ID
         r.extend(&encode_varint(self.protocol_version));
         r.extend(&encode_string(&self.server_address));
-        r.extend(&encode_ushort(self.server_port));
+        r.extend(&encode_u16(self.server_port));
         r.extend(&encode_varint(self.next_state as u32));
         wrap_packet(r)
     }
