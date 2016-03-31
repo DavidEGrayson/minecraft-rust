@@ -17,7 +17,7 @@ fn encode_varint(n : u32) -> Vec<u8> {
 }
 
 fn encode_u16(n : u16) -> Vec<u8> {
-  return vec![(n >> 8) as u8, n as u8];
+    return vec![(n >> 8) as u8, n as u8];
 }
 
 fn encode_string(s : &str) -> Vec<u8>
@@ -90,6 +90,55 @@ fn print_bytes(bytes : &[u8]) {
     println!("");
 }
 
+trait Packet {
+
+}
+
+struct EncryptionRequest {
+    server_id : String,
+    public_key : Vec<u8>,
+    verify_token : Vec<u8>,
+}
+
+impl Packet for EncryptionRequest {
+
+}
+
+trait DataReader {
+    fn read_u8(&mut self) -> u8;  // TODO: error handling!
+    fn read_varint_u64(&mut self) -> u64;
+}
+
+impl DataReader for std::io::Read {
+    fn read_u8(&mut self) -> u8 {
+        let mut buffer : [u8; 1] = [0];
+        self.read_exact(&mut buffer).unwrap();
+        return buffer[0];
+    }
+
+    fn read_varint_u64(&mut self) -> u64 {
+        let mut r : u64 = 0;
+        loop {
+            let b = self.read_u8();
+            r += (b & 0x7F) as u64;
+            if (b & 0x80) == 0 { break; }
+            r <<= 7;
+        }
+        return r;
+    }
+}
+
+fn read_packet(stream : &mut std::io::Read) -> Box<Packet> {
+    let packet_id : u64 = 0; // TODO: stream.read_varint_u64();
+    println!("Packet id {}", packet_id);
+    let x = EncryptionRequest {
+        server_id: "tmphax".to_owned(),
+        public_key: vec![],
+        verify_token: vec![]
+    };
+    return Box::new(x);
+}
+
 fn main() {
     let settings = read_settings();
     let server_address : &str = settings["server"].as_str().unwrap();
@@ -114,7 +163,9 @@ fn main() {
     print_bytes(&login_start.encode());
     stream.write(&login_start.encode()).unwrap();
 
+    let packet = read_packet(&mut stream);
+
     let byte_count = stream.read(&mut buffer).unwrap();
-    println!("Server response:");
+    println!("Left-over bytes:");
     print_bytes(&buffer[0..byte_count]);
 }
