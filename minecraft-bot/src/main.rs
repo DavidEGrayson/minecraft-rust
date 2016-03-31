@@ -16,6 +16,10 @@ fn encode_varint(n : u32) -> Vec<u8> {
     }
 }
 
+fn encode_ushort(n : u16) -> Vec<u8> {
+  return vec![(n >> 8) as u8, n as u8];
+}
+
 fn encode_string(s : &str) -> Vec<u8>
 {
     let mut r : Vec<u8> = encode_varint(s.len() as u32); // TODO: don't use 'as' here
@@ -47,7 +51,7 @@ impl EncodablePacket for Handshake {
         r.extend(&encode_varint(0x00));  // packet ID
         r.extend(&encode_varint(self.protocol_version));
         r.extend(&encode_string(&self.server_address));
-        r.extend(&encode_varint(self.server_port as u32));
+        r.extend(&encode_ushort(self.server_port));
         r.extend(&encode_varint(self.next_state as u32));
         wrap_packet(r)
     }
@@ -110,7 +114,7 @@ fn main() {
     print_bytes(&login_start.encode());
     stream.write(&login_start.encode()).unwrap();
 
-    std::thread::sleep(std::time::Duration::new(5, 0));
     let byte_count = stream.read(&mut buffer).unwrap();
+    println!("Server response:");
     print_bytes(&buffer[0..byte_count]);
 }
