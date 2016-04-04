@@ -136,16 +136,17 @@ fn read_packet(stream : &mut std::io::Read) -> Box<Packet> {
 
 fn main() {
     let settings = read_settings();
-    let server_address : &str = settings["server"].as_str().unwrap();
+    let server_address : String = settings["server"].as_str().unwrap().to_owned();
     let server_port : u16 = settings["server_port"].as_i64().unwrap() as u16;
-    let name = server_address.to_string() + ":" + &server_port.to_string();
+    let name : String = server_address.to_owned() + ":" + &server_port.to_string();
+
     println!("Connecting to {}...", name);
     let mut stream = TcpStream::connect(&*name).unwrap();
     println!("Connected.");
 
     let handshake = Handshake {
         protocol_version: 107,  // current protocol version
-        server_address: server_address.to_owned(),
+        server_address: server_address,
         server_port: server_port,
         next_state: 2, // login
     };
