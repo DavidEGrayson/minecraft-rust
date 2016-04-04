@@ -104,32 +104,27 @@ impl Packet for EncryptionRequest {
 
 }
 
-trait DataReader {
-    fn read_u8(&mut self) -> u8;  // TODO: error handling!
-    fn read_varint_u64(&mut self) -> u64;
+fn read_u8(stream : &mut std::io::Read) -> u8 {
+    let mut buffer : [u8; 1] = [0];
+    stream.read_exact(&mut buffer).unwrap();
+    return buffer[0];
 }
 
-impl DataReader for std::io::Read {
-    fn read_u8(&mut self) -> u8 {
-        let mut buffer : [u8; 1] = [0];
-        self.read_exact(&mut buffer).unwrap();
-        return buffer[0];
+fn read_varint_u64(stream : &mut std::io::Read) -> u64 {
+    let mut r : u64 = 0;
+    loop {
+        let b = read_u8(stream);
+        r += (b & 0x7F) as u64;
+        if (b & 0x80) == 0 { break; }
+        r <<= 7;
     }
-
-    fn read_varint_u64(&mut self) -> u64 {
-        let mut r : u64 = 0;
-        loop {
-            let b = self.read_u8();
-            r += (b & 0x7F) as u64;
-            if (b & 0x80) == 0 { break; }
-            r <<= 7;
-        }
-        return r;
-    }
+    return r;
 }
 
 fn read_packet(stream : &mut std::io::Read) -> Box<Packet> {
-    let packet_id : u64 = 0; // TODO: stream.read_varint_u64();
+    let len : u64 = read_varint_u64(stream);
+    println!("Packet length {}", len);
+    let packet_id : u64 = read_varint_u64(stream);
     println!("Packet id {}", packet_id);
     let x = EncryptionRequest {
         server_id: "tmphax".to_owned(),
@@ -147,7 +142,6 @@ fn main() {
     println!("Connecting to {}...", name);
     let mut stream = TcpStream::connect(&*name).unwrap();
     println!("Connected.");
-    let mut buffer : [u8; 10] = [0; 10];
 
     let handshake = Handshake {
         protocol_version: 107,  // current protocol version
@@ -165,6 +159,7 @@ fn main() {
 
     let packet = read_packet(&mut stream);
 
+    let mut buffer : [u8; 100] = [0; 100];
     let byte_count = stream.read(&mut buffer).unwrap();
     println!("Left-over bytes:");
     print_bytes(&buffer[0..byte_count]);
