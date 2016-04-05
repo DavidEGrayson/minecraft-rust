@@ -7,8 +7,7 @@ use yaml_rust::YamlLoader;
 fn encode_varint(n : u32) -> Vec<u8> {
     if n > 127 {
         let mut r : Vec<u8> = vec![(n as u8) | 0x80];
-        let rest : Vec<u8> = encode_varint(n >> 7);
-        r.extend(&rest);
+        r.extend(&encode_varint(n >> 7));
         r
     }
     else {
@@ -132,10 +131,11 @@ fn main() {
     let settings = read_settings();
     let server_address : String = settings["server"].as_str().unwrap().to_owned();
     let server_port : u16 = settings["server_port"].as_i64().unwrap() as u16;
-    let name : String = server_address.to_owned() + ":" + &server_port.to_string();
+    let server_name : String = server_address.to_owned() + ":" + &server_port.to_string();
+    let username : String = settings["username"].as_str().unwrap().to_owned();
 
-    println!("Connecting to {}...", name);
-    let mut stream = TcpStream::connect(&*name).unwrap();
+    println!("Connecting to {}...", server_name);
+    let mut stream = TcpStream::connect(&*server_name).unwrap();
     println!("Connected.");
 
     let handshake = Handshake {
@@ -145,7 +145,7 @@ fn main() {
         next_state: 2, // login
     };
     let login_start = LoginStart {
-        username: "Elavid".to_owned(),
+        username: username,
     };
     print_bytes(&handshake.encode());
     stream.write(&handshake.encode()).unwrap();
