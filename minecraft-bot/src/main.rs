@@ -121,17 +121,11 @@ fn read_varint_u64(stream : &mut std::io::Read) -> u64 {
     return r;
 }
 
-fn read_packet(stream : &mut std::io::Read) -> Box<Packet> {
-    let len : u64 = read_varint_u64(stream);
-    println!("Packet length {}", len);
-    let packet_id : u64 = read_varint_u64(stream);
-    println!("Packet id {}", packet_id);
-    let x = EncryptionRequest {
-        server_id: "tmphax".to_owned(),
-        public_key: vec![],
-        verify_token: vec![]
-    };
-    return Box::new(x);
+fn read_packet(stream : &mut std::io::Read) -> Vec<u8> {
+    let length = read_varint_u64(stream);
+    let mut buffer = vec![0; length as usize];
+    stream.read_exact(&mut buffer).unwrap();
+    return buffer
 }
 
 fn main() {
@@ -159,6 +153,8 @@ fn main() {
     stream.write(&login_start.encode()).unwrap();
 
     let packet = read_packet(&mut stream);
+    println!("Packet:");
+    print_bytes(&packet);
 
     let mut buffer : [u8; 100] = [0; 100];
     let byte_count = stream.read(&mut buffer).unwrap();
