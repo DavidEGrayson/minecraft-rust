@@ -4,39 +4,9 @@ use std::io::prelude::*;
 mod protocol;
 use protocol::pack;
 use protocol::packet;
+use protocol::encode::EncodablePacket;
 mod settings;
-
-trait EncodablePacket {
-    fn encode(&self) -> Vec<u8>;
-}
-
-impl EncodablePacket for packet::Handshake {
-    fn encode(&self) -> Vec<u8> {
-        let mut r : Vec<u8> = Vec::new();
-        r.extend(&pack::encode_varint(0x00));  // packet ID
-        r.extend(&pack::encode_varint(self.protocol_version));
-        r.extend(&pack::encode_string(&self.server_address));
-        r.extend(&pack::encode_u16(self.server_port));
-        r.extend(&pack::encode_varint(self.next_state as u32));
-        pack::wrap_packet(r)
-    }
-}
-
-impl EncodablePacket for packet::LoginStart {
-    fn encode(&self) -> Vec<u8> {
-        let mut r : Vec<u8> = Vec::new();
-        r.extend(&pack::encode_varint(0x00));  // packet ID
-        r.extend(&pack::encode_string(&self.username));
-        pack::wrap_packet(r)
-    }
-}
-
-fn print_bytes(bytes : &[u8]) {
-    for byte in bytes {
-        print!("0x{:02x} ", byte);
-    }
-    println!("");
-}
+mod util;
 
 fn main() {
     let settings = settings::read();
@@ -58,17 +28,17 @@ fn main() {
     let login_start = packet::LoginStart {
         username: username,
     };
-    print_bytes(&handshake.encode());
+    util::print_bytes(&handshake.encode());
     stream.write(&handshake.encode()).unwrap();
-    print_bytes(&login_start.encode());
+    util::print_bytes(&login_start.encode());
     stream.write(&login_start.encode()).unwrap();
 
     let packet = pack::read_packet(&mut stream).unwrap();
     println!("Packet:");
-    print_bytes(&packet);
+    util::print_bytes(&packet);
 
     let mut buffer : [u8; 100] = [0; 100];
     let byte_count = stream.read(&mut buffer).unwrap();
     println!("Left-over bytes:");
-    print_bytes(&buffer[0..byte_count]);
+    util::print_bytes(&buffer[0..byte_count]);
 }
