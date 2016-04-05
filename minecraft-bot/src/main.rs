@@ -120,11 +120,11 @@ fn read_varint_u64(stream : &mut std::io::Read) -> u64 {
     return r;
 }
 
-fn read_packet(stream : &mut std::io::Read) -> Vec<u8> {
+fn read_packet(stream : &mut std::io::Read) -> std::io::Result<Vec<u8>> {
     let length = read_varint_u64(stream);
     let mut buffer = vec![0; length as usize];
-    stream.read_exact(&mut buffer).unwrap();
-    return buffer
+    try!(stream.read_exact(&mut buffer));
+    return Ok(buffer)
 }
 
 fn main() {
@@ -152,7 +152,7 @@ fn main() {
     print_bytes(&login_start.encode());
     stream.write(&login_start.encode()).unwrap();
 
-    let packet = read_packet(&mut stream);
+    let packet = read_packet(&mut stream).unwrap();
     println!("Packet:");
     print_bytes(&packet);
 
