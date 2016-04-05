@@ -103,25 +103,25 @@ impl Packet for EncryptionRequest {
 
 }
 
-fn read_u8(stream : &mut std::io::Read) -> u8 {
+fn read_u8(stream : &mut std::io::Read) -> std::io::Result<u8> {
     let mut buffer : [u8; 1] = [0];
-    stream.read_exact(&mut buffer).unwrap();
-    return buffer[0];
+    try!(stream.read_exact(&mut buffer));
+    return Ok(buffer[0]);
 }
 
-fn read_varint_u64(stream : &mut std::io::Read) -> u64 {
+fn read_varint_u64(stream : &mut std::io::Read) -> std::io::Result<u64> {
     let mut r : u64 = 0;
     loop {
-        let b = read_u8(stream);
+        let b = try!(read_u8(stream));
         r += (b & 0x7F) as u64;
         if (b & 0x80) == 0 { break; }
         r <<= 7;
     }
-    return r;
+    return Ok(r);
 }
 
 fn read_packet(stream : &mut std::io::Read) -> std::io::Result<Vec<u8>> {
-    let length = read_varint_u64(stream);
+    let length = try!(read_varint_u64(stream));
     let mut buffer = vec![0; length as usize];
     try!(stream.read_exact(&mut buffer));
     return Ok(buffer)
