@@ -3,38 +3,11 @@ use std::net::TcpStream;
 use std::io::prelude::*;
 use std::fs::File;
 use yaml_rust::YamlLoader;
-
-fn encode_varint(n : u32) -> Vec<u8> {
-    if n > 127 {
-        let mut r : Vec<u8> = vec![(n as u8) | 0x80];
-        r.extend(&encode_varint(n >> 7));
-        r
-    }
-    else {
-        return vec![n as u8];
-    }
-}
-
-fn encode_u16(n : u16) -> Vec<u8> {
-    return vec![(n >> 8) as u8, n as u8];
-}
-
-fn encode_string(s : &str) -> Vec<u8>
-{
-    let mut r : Vec<u8> = encode_varint(s.len() as u32); // TODO: don't use 'as' here
-    r.extend(s.to_owned().into_bytes());
-    r
-}
+mod protocol;
+use protocol::pack;
 
 trait EncodablePacket {
     fn encode(&self) -> Vec<u8>;
-}
-
-fn wrap_packet(x : Vec<u8>) -> Vec<u8>
-{
-    let mut r = encode_varint(x.len() as u32);
-    r.extend(x);
-    r
 }
 
 struct Handshake {
@@ -47,12 +20,12 @@ struct Handshake {
 impl EncodablePacket for Handshake {
     fn encode(&self) -> Vec<u8> {
         let mut r : Vec<u8> = Vec::new();
-        r.extend(&encode_varint(0x00));  // packet ID
-        r.extend(&encode_varint(self.protocol_version));
-        r.extend(&encode_string(&self.server_address));
-        r.extend(&encode_u16(self.server_port));
-        r.extend(&encode_varint(self.next_state as u32));
-        wrap_packet(r)
+        r.extend(&pack::encode_varint(0x00));  // packet ID
+        r.extend(&pack::encode_varint(self.protocol_version));
+        r.extend(&pack::encode_string(&self.server_address));
+        r.extend(&pack::encode_u16(self.server_port));
+        r.extend(&pack::encode_varint(self.next_state as u32));
+        pack::wrap_packet(r)
     }
 }
 
@@ -63,9 +36,9 @@ struct LoginStart {
 impl EncodablePacket for LoginStart {
     fn encode(&self) -> Vec<u8> {
         let mut r : Vec<u8> = Vec::new();
-        r.extend(&encode_varint(0x00));  // packet ID
-        r.extend(&encode_string(&self.username));
-        wrap_packet(r)
+        r.extend(&pack::encode_varint(0x00));  // packet ID
+        r.extend(&pack::encode_string(&self.username));
+        pack::wrap_packet(r)
     }
 }
 
@@ -103,30 +76,6 @@ impl Packet for EncryptionRequest {
 
 }
 
-fn read_u8(stream : &mut std::io::Read) -> std::io::Result<u8> {
-    let mut buffer : [u8; 1] = [0];
-    try!(stream.read_exact(&mut buffer));
-    return Ok(buffer[0]);
-}
-
-fn read_varint_u64(stream : &mut std::io::Read) -> std::io::Result<u64> {
-    let mut r : u64 = 0;
-    loop {
-        let b = try!(read_u8(stream));
-        r += (b & 0x7F) as u64;
-        if (b & 0x80) == 0 { break; }
-        r <<= 7;
-    }
-    return Ok(r);
-}
-
-fn read_packet(stream : &mut std::io::Read) -> std::io::Result<Vec<u8>> {
-    let length = try!(read_varint_u64(stream));
-    let mut buffer = vec![0; length as usize];
-    try!(stream.read_exact(&mut buffer));
-    return Ok(buffer)
-}
-
 fn main() {
     let settings = read_settings();
     let server_address : String = settings["server"].as_str().unwrap().to_owned();
@@ -152,7 +101,7 @@ fn main() {
     print_bytes(&login_start.encode());
     stream.write(&login_start.encode()).unwrap();
 
-    let packet = read_packet(&mut stream).unwrap();
+    let packet = pack::read_packet(&mut stream).unwrap();
     println!("Packet:");
     print_bytes(&packet);
 
