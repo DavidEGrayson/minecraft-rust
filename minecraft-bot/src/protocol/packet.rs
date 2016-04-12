@@ -1,3 +1,9 @@
+pub enum Packet {
+    Handshake(Handshake),
+    LoginStart(LoginStart),
+    EncryptionRequest(EncryptionRequest),
+}
+
 pub struct Handshake {
     pub protocol_version : u32,
     pub server_address : String,

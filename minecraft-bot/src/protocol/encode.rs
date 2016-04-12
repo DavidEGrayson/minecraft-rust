@@ -1,5 +1,5 @@
-use protocol::pack;
-use protocol::packet;
+use super::pack;
+use super::packet;
 
 pub trait EncodablePacket {
     fn encode(&self) -> Vec<u8>;
