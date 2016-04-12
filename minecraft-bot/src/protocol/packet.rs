@@ -2,6 +2,7 @@ pub enum Packet {
     Handshake(Handshake),
     LoginStart(LoginStart),
     EncryptionRequest(EncryptionRequest),
+    Unknown,
 }
 
 pub struct Handshake {
@@ -16,7 +17,7 @@ pub struct LoginStart {
 }
 
 pub struct EncryptionRequest {
-    server_id : String,
-    public_key : Vec<u8>,
-    verify_token : Vec<u8>,
+    pub server_id : String,
+    pub public_key : Vec<u8>,
+    pub verify_token : Vec<u8>,
 }

@@ -5,6 +5,7 @@ mod protocol;
 use protocol::pack;
 use protocol::packet;
 use protocol::encode::EncodablePacket;
+use protocol::display;
 mod settings;
 mod util;
 
@@ -33,9 +34,11 @@ fn main() {
     util::print_bytes(&login_start.encode());
     stream.write(&login_start.encode()).unwrap();
 
-    let packet = pack::read_packet(&mut stream).unwrap();
-    println!("Packet:");
-    util::print_bytes(&packet);
+    let raw_packet = pack::read_packet(&mut stream).unwrap();
+    println!("Raw packet:");
+    util::print_bytes(&raw_packet);
+    let packet = protocol::decode::decode(raw_packet);
+    println!("Processed packet: {}", packet);
 
     let mut buffer : [u8; 100] = [0; 100];
     let byte_count = stream.read(&mut buffer).unwrap();
