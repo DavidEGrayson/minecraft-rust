@@ -5,7 +5,6 @@ mod protocol;
 use protocol::pack;
 use protocol::packet;
 use protocol::encode::EncodablePacket;
-use protocol::display;
 mod settings;
 mod util;
 
@@ -38,7 +37,11 @@ fn main() {
     println!("Raw packet:");
     util::print_bytes(&raw_packet);
     let packet = protocol::decode::decode(raw_packet);
-    println!("Processed packet: {}", packet);
+    match &packet {
+        &packet::Packet::Disconnect(ref d) => println!("Disconnected from server: {}", d.reason),
+        _ => (),
+    }
+    println!("Processed packet: {:?}", packet);
 
     let mut buffer : [u8; 100] = [0; 100];
     let byte_count = stream.read(&mut buffer).unwrap();
