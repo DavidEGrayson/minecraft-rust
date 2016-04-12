@@ -61,7 +61,8 @@ pub fn read_packet(stream : &mut io::Read) -> io::Result<Vec<u8>> {
 pub fn read_string(stream : &mut io::Read) -> io::Result<String> {
     let buffer = try!(read_var_bytes(stream));
     match str::from_utf8(&buffer) {
-        Ok(v) => return Ok(v.to_owned()),
-        Err(e) => panic!("Invalid UTF-8"),  // TODO: proper error handling
-    };
+        Ok(v) => Ok(v.to_owned()),
+        Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData,
+                                     "String does not contain valid UTF-8.")),
+    }
 }
