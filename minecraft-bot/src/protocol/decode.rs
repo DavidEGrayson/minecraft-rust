@@ -24,6 +24,7 @@ pub fn decode(mut raw : Vec<u8>) -> Packet {
 }
 
 fn decode_disconnect(stream : &mut io::Read) -> packet::Disconnect {
+    // TODO: proper error handling
     let reason = pack::read_string(stream).unwrap();
     packet::Disconnect { reason: reason }
 }
