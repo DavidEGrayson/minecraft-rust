@@ -7,7 +7,7 @@ pub trait EncodablePacket {
 
 impl EncodablePacket for packet::Handshake {
     fn encode(&self) -> Vec<u8> {
-        let mut r : Vec<u8> = Vec::new();
+        let mut r = vec![];
         r.extend(&pack::encode_varint(0x00));  // packet ID
         r.extend(&pack::encode_varint(self.protocol_version));
         r.extend(&pack::encode_string(&self.server_address));
@@ -19,7 +19,7 @@ impl EncodablePacket for packet::Handshake {
 
 impl EncodablePacket for packet::LoginStart {
     fn encode(&self) -> Vec<u8> {
-        let mut r : Vec<u8> = Vec::new();
+        let mut r = vec![];
         r.extend(&pack::encode_varint(0x00));  // packet ID
         r.extend(&pack::encode_string(&self.username));
         pack::wrap_packet(r)

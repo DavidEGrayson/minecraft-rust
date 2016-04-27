@@ -62,7 +62,7 @@ pub fn read_string(stream : &mut io::Read) -> io::Result<String> {
     let buffer = try!(read_var_bytes(stream));
     match str::from_utf8(&buffer) {
         Ok(v) => Ok(v.to_owned()),
-        Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData,
+        Err(_) => Err(io::Error::new(io::ErrorKind::InvalidData,
                                      "String does not contain valid UTF-8.")),
     }
 }

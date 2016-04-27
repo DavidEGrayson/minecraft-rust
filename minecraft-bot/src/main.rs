@@ -20,7 +20,7 @@ fn main() {
     println!("Connected.");
 
     let handshake = packet::Handshake {
-        protocol_version: 107,  // current protocol version
+        protocol_version: 109,  // current protocol version
         server_address: server_address,
         server_port: server_port,
         next_state: 2, // login
@@ -28,18 +28,19 @@ fn main() {
     let login_start = packet::LoginStart {
         username: username,
     };
-    util::print_bytes(&handshake.encode());
     stream.write(&handshake.encode()).unwrap();
-    util::print_bytes(&login_start.encode());
+    util::print_bytes(&handshake.encode());
     stream.write(&login_start.encode()).unwrap();
+    util::print_bytes(&login_start.encode());
 
+    println!("Reading packet...");
     let raw_packet = pack::read_packet(&mut stream).unwrap();
     println!("Raw packet:");
     util::print_bytes(&raw_packet);
     let packet = protocol::decode::decode(raw_packet);
     match &packet {
         &packet::Packet::Disconnect(ref d) => println!("Disconnected from server: {}", d.reason),
-        _ => (),
+        _ => println!("Got some other kind of packet"),
     }
     println!("Processed packet: {:?}", packet);
 
