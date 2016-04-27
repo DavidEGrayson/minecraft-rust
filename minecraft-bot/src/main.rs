@@ -27,7 +27,7 @@ fn main() {
     match login::login(&mut stream, &server_address, server_port, &username) {
         Result::Ok(_) => (),
         Result::Err(e) => {
-            println!("Failed to log in: {}", e);
+            println!("Failed to log in: {}.", e);
             return;
         }
     };

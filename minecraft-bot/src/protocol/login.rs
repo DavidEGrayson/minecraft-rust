@@ -1,10 +1,11 @@
 extern crate std;
 use std::io::prelude::*;
-
 use std::error::Error;
+use std::convert::From;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::net::TcpStream;
+
 use protocol;
 use protocol::pack;
 use protocol::packet;
@@ -33,12 +34,10 @@ impl Display for LoginError {
 
 impl Error for LoginError {
     fn description(&self) -> &str {
-        // TODO: this needs to be improved a lot
+        // TODO: this needs to be improved a lot if it is actually used
         match *self {
-            LoginError::RefusedByServer(ref s) => {
-                s
-            }
-            LoginError::IOError(ref e) => { "I/O error" }
+            LoginError::RefusedByServer(ref s) => { "login refused by server" }
+            LoginError::IOError(ref e) => { "I/O error during login" }
         }
     }
 
@@ -47,6 +46,12 @@ impl Error for LoginError {
             LoginError::RefusedByServer(..) => Option::None,
             LoginError::IOError(ref e) => Option::Some(e),
         }
+    }
+}
+
+impl From<std::io::Error> for LoginError {
+    fn from(err : std::io::Error) -> LoginError {
+        LoginError::IOError(err)
     }
 }
 
@@ -63,21 +68,18 @@ pub fn login(stream : &mut TcpStream, server_address : &str,
     let login_start = packet::LoginStart {
         username: username.to_owned(),
     };
-    stream.write(&handshake.encode()).unwrap();
-    util::print_bytes(&handshake.encode());
-    stream.write(&login_start.encode()).unwrap();
-    util::print_bytes(&login_start.encode());
+    try!(stream.write(&handshake.encode()));
+    try!(stream.write(&login_start.encode()));
 
     println!("Reading packet...");
-    let raw_packet = match pack::read_packet(stream) {
-        Ok(p) => p,
-        Err(e) => { return Err(LoginError::IOError(e)); }
-    };
+    let raw_packet = try!(pack::read_packet(stream));
     println!("Raw packet:");
     util::print_bytes(&raw_packet);
     let packet = protocol::decode::decode(raw_packet);
     match &packet {
-        &packet::Packet::Disconnect(ref d) => println!("Disconnected from server: {}", d.reason),
+        &packet::Packet::Disconnect(ref d) => {
+            return Err(LoginError::RefusedByServer(d.reason.to_owned()));
+        }
         _ => println!("Got some other kind of packet"),
     }
     println!("Processed packet: {:?}", packet);
