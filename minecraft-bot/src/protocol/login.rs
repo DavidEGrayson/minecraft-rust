@@ -23,9 +23,8 @@ impl Display for LoginError {
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         match *self {
             LoginError::RefusedByServer(ref s) => {
-                try!(fmt.write_str("Login refused by server"));
-                try!(fmt.write_str(s));
-                std::result::Result::Ok(())
+                try!(fmt.write_str("Login refused by server: "));
+                fmt.write_str(s)
             },
             LoginError::IOError(ref e) => { e.fmt(fmt) }
         }
@@ -34,7 +33,6 @@ impl Display for LoginError {
 
 impl Error for LoginError {
     fn description(&self) -> &str {
-        // TODO: this needs to be improved a lot if it is actually used
         match *self {
             LoginError::RefusedByServer(ref s) => { "login refused by server" }
             LoginError::IOError(ref e) => { "I/O error during login" }
@@ -58,18 +56,23 @@ impl From<std::io::Error> for LoginError {
 pub type LoginResult = Result<(), LoginError>;
 
 pub fn login(stream : &mut TcpStream, server_address : &str,
-         server_port : u16, username : &str) -> LoginResult {
-    let handshake = packet::Handshake {
-        protocol_version: 109,  // current protocol version
-        server_address: server_address.to_owned(),
-        server_port: server_port,
-        next_state: 2, // login
-    };
-    let login_start = packet::LoginStart {
-        username: username.to_owned(),
-    };
-    try!(stream.write(&handshake.encode()));
-    try!(stream.write(&login_start.encode()));
+             server_port : u16, username : &str) -> LoginResult {
+    {
+        let handshake = packet::Handshake {
+            protocol_version: 109,  // current protocol version
+            server_address: server_address.to_owned(),
+            server_port: server_port,
+            next_state: 2, // login
+        };
+        try!(stream.write(&handshake.encode()));
+    }
+
+    {
+        let login_start = packet::LoginStart {
+            username: username.to_owned(),
+        };
+        try!(stream.write(&login_start.encode()));
+    }
 
     println!("Reading packet...");
     let raw_packet = try!(pack::read_packet(stream));
