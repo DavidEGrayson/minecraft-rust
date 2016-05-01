@@ -1,15 +1,9 @@
 extern crate yaml_rust;
 use std::net::TcpStream;
-use std::io::prelude::*;
-use std::error::Error;
-use std::fmt::Display;
-use std::fmt::Formatter;
 
 mod protocol;
-use protocol::pack;
-use protocol::packet;
-use protocol::login;
-use protocol::encode::EncodablePacket;
+mod support;
+use support::login;
 mod settings;
 mod util;
 

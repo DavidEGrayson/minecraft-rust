@@ -9,7 +9,6 @@ use std::net::TcpStream;
 use protocol;
 use protocol::pack;
 use protocol::packet;
-use protocol::login;
 use protocol::encode::EncodablePacket;
 use util;
 
